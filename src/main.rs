@@ -1,24 +1,39 @@
 mod color;
 mod draw;
+mod model;
 
 use color::Color;
 use draw::draw_print;
+use model::Model;
 
 fn main() {
     render();
 }
 pub fn render() {
     let aspect_ratio = 1f32;
-    let image_width = 100;
+    let image_width = 1000;
     let image_height = (image_width as f32 / aspect_ratio) as usize;
     let mut image = vec![vec![Color::new(0., 0., 0.); image_width]; image_height];
 
-    // line(90, 10, 70, 80, &mut image, Color::new(1., 1., 1.));
     let white = Color::new(1., 1., 1.);
-    let red = Color::new(1., 0., 0.);
-    line(13, 20, 80, 40, &mut image, white);
-    line(20, 13, 40, 80, &mut image, red);
-    line(80, 40, 13, 20, &mut image, red);
+
+    let model = Model::new("obj/african_head.obj").unwrap();
+
+    for i in 0..model.nfaces() {
+        let face = model.face(i);
+        for j in 0..3 {
+            let v0 = model.vert(face[j] as usize);
+            let v1 = model.vert(face[(j + 1) % 3] as usize);
+
+            let x0 = ((v0.x + 1.) * image_width as f32 / 2.) as isize;
+            let x1 = ((v1.x + 1.) * image_width as f32 / 2.) as isize;
+            let y0 = ((v0.y + 1.) * image_height as f32 / 2.) as isize;
+            let y1 = ((v1.y + 1.) * image_height as f32 / 2.) as isize;
+
+            // eprintln!("{x0} {y0} {x1} {y1}");
+            line(x0, y0, x1, y1, &mut image, white);
+        }
+    }
 
     // output rendering result
     draw_print(image);
@@ -45,12 +60,13 @@ fn line(
         mem::swap(&mut x0, &mut x1);
         mem::swap(&mut y0, &mut y1);
     }
-    for x in x0..x1 {
+    for mut x in x0..x1 {
         let t = (x - x0) as f32 / (x1 - x0) as f32;
-        let y = y0 as f32 + (y1 - y0) as f32 * t;
+        let mut y = (y0 as f32 + (y1 - y0) as f32 * t) as isize;
         if steep {
-            image[x as usize][y as usize] = color;
-        } else {
+            mem::swap(&mut x, &mut y); // if transposed, de-transpose
+        }
+        if (0..image[1].len()).contains(&(x as usize)) && (0..image.len()).contains(&(y as usize)) {
             image[y as usize][x as usize] = color;
         }
     }
