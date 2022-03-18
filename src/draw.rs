@@ -2,7 +2,7 @@ use super::*;
 
 pub fn draw_print(values: Vec<Vec<Color>>) {
     print!("P3\n{} {}\n255\n", values[0].len(), values.len());
-    for line in values {
+    for line in values.into_iter().rev() {
         for value in line {
             write_color(&value);
         }
