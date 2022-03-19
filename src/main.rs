@@ -4,9 +4,10 @@ mod color;
 mod coord;
 mod draw;
 mod model;
+use rand::prelude::*;
 
 use color::Color;
-use coord::Coord2;
+use coord::{Coord2, Coord3};
 use draw::draw_print;
 use model::Model;
 
@@ -15,35 +16,33 @@ fn main() {
 }
 pub fn render() {
     let aspect_ratio = 1f32;
-    let image_width = 200;
+    let image_width = 1000;
     let image_height = (image_width as f32 / aspect_ratio) as usize;
     let mut image = vec![vec![Color::new(0., 0., 0.); image_width]; image_height];
 
-    let white = Color::new(1., 1., 1.);
-    let red = Color::new(1., 0., 0.);
-    let green = Color::new(0., 1., 0.);
+    let model = Model::new("obj/african_head.obj").unwrap();
 
-    sweep_triangle(
-        Coord2 { x: 10, y: 70 },
-        Coord2 { x: 50, y: 160 },
-        Coord2 { x: 70, y: 80 },
-        &mut image,
-        red,
-    );
-    sweep_triangle(
-        Coord2 { x: 180, y: 50 },
-        Coord2 { x: 150, y: 1 },
-        Coord2 { x: 70, y: 180 },
-        &mut image,
-        white,
-    );
-    sweep_triangle(
-        Coord2 { x: 180, y: 150 },
-        Coord2 { x: 120, y: 160 },
-        Coord2 { x: 130, y: 180 },
-        &mut image,
-        green,
-    );
+    let mut rng = rand::thread_rng();
+
+    for i in 0..model.nfaces() {
+        let face = model.face(i);
+        let v = (0..3).map(|i| model.vert(face[i] as usize));
+        let v: Vec<Coord2<isize>> = v
+            .map(|x| (x + 1f32) * image_width as f32 / 2.)
+            .map(|v| Coord2 {
+                x: v.x as isize,
+                y: v.y as isize,
+            })
+            .collect();
+
+        sweep_triangle(
+            v[0],
+            v[1],
+            v[2],
+            &mut image,
+            Color::new(rng.gen(), rng.gen(), rng.gen()),
+        );
+    }
 
     // output rendering result
     draw_print(image);
@@ -53,7 +52,7 @@ fn sweep_triangle(
     a: Coord2<isize>,
     b: Coord2<isize>,
     c: Coord2<isize>,
-    mut image: &mut Vec<Vec<Color>>,
+    image: &mut Vec<Vec<Color>>,
     color: Color,
 ) {
     let bbox = find_bounding_box(a, b, c, image[0].len() as isize, image.len() as isize);
