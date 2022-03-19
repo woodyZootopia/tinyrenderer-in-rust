@@ -1,8 +1,10 @@
 mod color;
+mod coord;
 mod draw;
 mod model;
 
 use color::Color;
+use coord::Coord2;
 use draw::draw_print;
 use model::Model;
 
@@ -66,7 +68,7 @@ fn line(
         if steep {
             mem::swap(&mut x, &mut y); // if transposed, de-transpose
         }
-        if (0..image[1].len()).contains(&(x as usize)) && (0..image.len()).contains(&(y as usize)) {
+        if (0..image[0].len()).contains(&(x as usize)) && (0..image.len()).contains(&(y as usize)) {
             image[y as usize][x as usize] = color;
         }
     }

@@ -1,20 +1,15 @@
+use super::coord::Coord3;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{self, BufReader};
 
-#[derive(Clone, Copy)]
-pub struct Coord {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-}
-
 pub struct Model {
-    verts: Vec<Coord>,
+    verts: Vec<Coord3<f32>>,
     faces: Vec<[isize; 3]>,
 }
 
 impl Model {
+    /// Read an `.obj` file of the given path and construct the 3D model
     pub fn new(path: &str) -> io::Result<Self> {
         let (mut verts, mut faces) = (Vec::new(), Vec::new());
         let f = BufReader::new(File::open(path)?);
@@ -27,7 +22,7 @@ impl Model {
                         let x = data[1].parse::<f32>().unwrap();
                         let y = data[2].parse::<f32>().unwrap();
                         let z = data[3].parse::<f32>().unwrap();
-                        verts.push(Coord { x, y, z });
+                        verts.push(Coord3 { x, y, z });
                     }
                     "f " => {
                         let data: Vec<&str> = line.split(' ').collect();
@@ -47,7 +42,7 @@ impl Model {
     pub fn face(&self, idx: usize) -> [isize; 3] {
         self.faces[idx]
     }
-    pub fn vert(&self, idx: usize) -> Coord {
+    pub fn vert(&self, idx: usize) -> Coord3<f32> {
         self.verts[idx]
     }
     pub fn nfaces(&self) -> usize {
