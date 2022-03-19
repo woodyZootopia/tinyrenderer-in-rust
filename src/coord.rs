@@ -13,7 +13,7 @@ pub struct Coord2<T> {
     pub y: T,
 }
 
-macro_rules! implBasicArithCoord2 {
+macro_rules! implBasicArith {
     ($name: tt, $op: tt, $funcname:tt) => {
         impl<T: Clone+Copy+$name<Output = T>> $name for Coord2<T> {
             type Output = Self;
@@ -35,11 +35,6 @@ macro_rules! implBasicArithCoord2 {
                 }
             }
         }
-    };
-}
-
-macro_rules! implBasicArithCoord3 {
-    ($name: tt, $op: tt, $funcname:tt) => {
         impl<T: Clone+Copy+$name<Output = T>> $name for Coord3<T> {
             type Output = Self;
 
@@ -65,11 +60,7 @@ macro_rules! implBasicArithCoord3 {
     };
 }
 
-implBasicArithCoord2!(Add, +, add);
-implBasicArithCoord2!(Mul, *, mul);
-implBasicArithCoord2!(Sub, -, sub);
-implBasicArithCoord2!(Div, /, div);
-implBasicArithCoord3!(Add, +, add);
-implBasicArithCoord3!(Mul, *, mul);
-implBasicArithCoord3!(Sub, -, sub);
-implBasicArithCoord3!(Div, /, div);
+implBasicArith!(Add, +, add);
+implBasicArith!(Mul, *, mul);
+implBasicArith!(Sub, -, sub);
+implBasicArith!(Div, /, div);
