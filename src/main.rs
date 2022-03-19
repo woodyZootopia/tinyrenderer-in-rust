@@ -20,31 +20,89 @@ pub fn render() {
     let mut image = vec![vec![Color::new(0., 0., 0.); image_width]; image_height];
 
     let white = Color::new(1., 1., 1.);
+    let red = Color::new(1., 0., 0.);
+    let green = Color::new(0., 1., 0.);
 
-    triangle(
+    sweep_triangle(
         Coord2 { x: 10, y: 70 },
         Coord2 { x: 50, y: 160 },
         Coord2 { x: 70, y: 80 },
         &mut image,
-        white,
+        red,
     );
-    triangle(
+    sweep_triangle(
         Coord2 { x: 180, y: 50 },
         Coord2 { x: 150, y: 1 },
         Coord2 { x: 70, y: 180 },
         &mut image,
         white,
     );
-    triangle(
+    sweep_triangle(
         Coord2 { x: 180, y: 150 },
         Coord2 { x: 120, y: 160 },
         Coord2 { x: 130, y: 180 },
         &mut image,
-        white,
+        green,
     );
 
     // output rendering result
     draw_print(image);
+}
+
+fn sweep_triangle(
+    t0: Coord2<isize>,
+    t1: Coord2<isize>,
+    t2: Coord2<isize>,
+    mut image: &mut Vec<Vec<Color>>,
+    color: Color,
+) {
+    // sort by y coord
+    let x = [t0, t1, t2];
+    let mut y = [(0, t0), (1, t1), (2, t2)];
+    y.sort_by_key(|x| x.1.y);
+    let (top, mid, bot) = (x[y[0].0], x[y[1].0], x[y[2].0]);
+
+    for y in top.y..mid.y {
+        let x_left =
+            top.x as f32 + (top.x - mid.x) as f32 / (top.y - mid.y) as f32 * (y - top.y) as f32;
+        let x_right =
+            top.x as f32 + (top.x - bot.x) as f32 / (top.y - bot.y) as f32 * (y - top.y) as f32;
+        line(
+            Coord2 {
+                x: x_left as isize,
+                y,
+            },
+            Coord2 {
+                x: x_right as isize,
+                y,
+            },
+            &mut image,
+            color,
+        );
+    }
+    for y in mid.y..bot.y {
+        let x_right =
+            top.x as f32 + (top.x - bot.x) as f32 / (top.y - bot.y) as f32 * (y - top.y) as f32;
+        let x_left =
+            mid.x as f32 + (mid.x - bot.x) as f32 / (mid.y - bot.y) as f32 * (y - mid.y) as f32;
+        horiz_line(x_left as isize, x_right as isize, y, &mut image, color);
+    }
+}
+
+fn horiz_line(
+    mut x_left: isize,
+    mut x_right: isize,
+    y: isize,
+    image: &mut Vec<Vec<Color>>,
+    color: Color,
+) {
+    if x_left > x_right {
+        use std::mem::swap;
+        swap(&mut x_left, &mut x_right);
+    }
+    for x in x_left..x_right {
+        image[y as usize][x as usize] = color;
+    }
 }
 
 fn triangle(
