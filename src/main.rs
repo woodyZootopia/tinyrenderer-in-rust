@@ -27,13 +27,21 @@ pub fn render() {
             let v0 = model.vert(face[j] as usize);
             let v1 = model.vert(face[(j + 1) % 3] as usize);
 
-            let x0 = ((v0.x + 1.) * image_width as f32 / 2.) as isize;
-            let x1 = ((v1.x + 1.) * image_width as f32 / 2.) as isize;
-            let y0 = ((v0.y + 1.) * image_height as f32 / 2.) as isize;
-            let y1 = ((v1.y + 1.) * image_height as f32 / 2.) as isize;
+            let t0 = (v0 + 1f32) * image_width as f32 / 2.;
+            let t1 = (v1 + 1f32) * image_width as f32 / 2.;
 
-            // eprintln!("{x0} {y0} {x1} {y1}");
-            line(x0, y0, x1, y1, &mut image, white);
+            line(
+                Coord2 {
+                    x: t0.x as isize,
+                    y: t0.y as isize,
+                },
+                Coord2 {
+                    x: t1.x as isize,
+                    y: t1.y as isize,
+                },
+                &mut image,
+                white,
+            );
         }
     }
 
@@ -41,15 +49,12 @@ pub fn render() {
     draw_print(image);
 }
 
-fn line(
-    mut x0: isize,
-    mut y0: isize,
-    mut x1: isize,
-    mut y1: isize,
-    image: &mut Vec<Vec<Color>>,
-    color: Color,
-) {
+fn line(t0: Coord2<isize>, t1: Coord2<isize>, image: &mut Vec<Vec<Color>>, color: Color) {
     use std::mem;
+    let mut x0 = t0.x;
+    let mut y0 = t0.y;
+    let mut x1 = t1.x;
+    let mut y1 = t1.y;
     let steep = if (x0 - x1).abs() < (y0 - y1).abs() {
         mem::swap(&mut x0, &mut y0);
         mem::swap(&mut x1, &mut y1);
