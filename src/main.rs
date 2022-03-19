@@ -50,43 +50,58 @@ pub fn render() {
 }
 
 fn sweep_triangle(
-    t0: Coord2<isize>,
-    t1: Coord2<isize>,
-    t2: Coord2<isize>,
+    a: Coord2<isize>,
+    b: Coord2<isize>,
+    c: Coord2<isize>,
     mut image: &mut Vec<Vec<Color>>,
     color: Color,
 ) {
-    // sort by y coord
-    let x = [t0, t1, t2];
-    let mut y = [(0, t0), (1, t1), (2, t2)];
-    y.sort_by_key(|x| x.1.y);
-    let (top, mid, bot) = (x[y[0].0], x[y[1].0], x[y[2].0]);
+    let bbox = find_bounding_box(a, b, c, image[0].len() as isize, image.len() as isize);
+    for x in bbox[0].x..bbox[1].x {
+        for y in bbox[0].y..bbox[1].y {
+            if inside(Coord2 { x, y }, a, b, c) {
+                image[y as usize][x as usize] = color;
+            }
+        }
+    }
+}
 
-    for y in top.y..mid.y {
-        let x_left =
-            top.x as f32 + (top.x - mid.x) as f32 / (top.y - mid.y) as f32 * (y - top.y) as f32;
-        let x_right =
-            top.x as f32 + (top.x - bot.x) as f32 / (top.y - bot.y) as f32 * (y - top.y) as f32;
-        line(
-            Coord2 {
-                x: x_left as isize,
-                y,
-            },
-            Coord2 {
-                x: x_right as isize,
-                y,
-            },
-            &mut image,
-            color,
-        );
-    }
-    for y in mid.y..bot.y {
-        let x_right =
-            top.x as f32 + (top.x - bot.x) as f32 / (top.y - bot.y) as f32 * (y - top.y) as f32;
-        let x_left =
-            mid.x as f32 + (mid.x - bot.x) as f32 / (mid.y - bot.y) as f32 * (y - mid.y) as f32;
-        horiz_line(x_left as isize, x_right as isize, y, &mut image, color);
-    }
+fn find_bounding_box(
+    t0: Coord2<isize>,
+    t1: Coord2<isize>,
+    t2: Coord2<isize>,
+    width: isize,
+    height: isize,
+) -> [Coord2<isize>; 2] {
+    let mut x = [t0.x, t1.x, t2.x];
+    let mut y = [t0.y, t1.y, t2.y];
+    x.sort();
+    y.sort();
+    return [
+        Coord2 {
+            x: 0.max(x[0]),
+            y: 0.max(y[0]),
+        },
+        Coord2 {
+            x: width.max(x[2]),
+            y: height.max(y[2]),
+        },
+    ];
+}
+
+fn inside(p: Coord2<isize>, a: Coord2<isize>, b: Coord2<isize>, c: Coord2<isize>) -> bool {
+    let ab = b - a;
+    let ac = c - a;
+    let pa = a - p;
+    let n = [
+        ac.x as f32 * pa.y as f32 - ac.y as f32 * pa.x as f32,
+        pa.x as f32 * ab.y as f32 - pa.y as f32 * ab.x as f32,
+        ab.x as f32 * ac.y as f32 - ab.y as f32 * ac.x as f32,
+    ];
+    let u = n[0] / n[2];
+    let v = n[1] / n[2];
+    let w = 1. - u - v;
+    return 0. <= u && 0. <= v && 0. <= w;
 }
 
 fn horiz_line(
