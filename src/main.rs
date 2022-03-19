@@ -1,3 +1,5 @@
+#![allow(unused_imports)]
+#![allow(dead_code)]
 mod color;
 mod coord;
 mod draw;
@@ -13,40 +15,48 @@ fn main() {
 }
 pub fn render() {
     let aspect_ratio = 1f32;
-    let image_width = 1000;
+    let image_width = 200;
     let image_height = (image_width as f32 / aspect_ratio) as usize;
     let mut image = vec![vec![Color::new(0., 0., 0.); image_width]; image_height];
 
     let white = Color::new(1., 1., 1.);
 
-    let model = Model::new("obj/african_head.obj").unwrap();
-
-    for i in 0..model.nfaces() {
-        let face = model.face(i);
-        for j in 0..3 {
-            let v0 = model.vert(face[j] as usize);
-            let v1 = model.vert(face[(j + 1) % 3] as usize);
-
-            let t0 = (v0 + 1f32) * image_width as f32 / 2.;
-            let t1 = (v1 + 1f32) * image_width as f32 / 2.;
-
-            line(
-                Coord2 {
-                    x: t0.x as isize,
-                    y: t0.y as isize,
-                },
-                Coord2 {
-                    x: t1.x as isize,
-                    y: t1.y as isize,
-                },
-                &mut image,
-                white,
-            );
-        }
-    }
+    triangle(
+        Coord2 { x: 10, y: 70 },
+        Coord2 { x: 50, y: 160 },
+        Coord2 { x: 70, y: 80 },
+        &mut image,
+        white,
+    );
+    triangle(
+        Coord2 { x: 180, y: 50 },
+        Coord2 { x: 150, y: 1 },
+        Coord2 { x: 70, y: 180 },
+        &mut image,
+        white,
+    );
+    triangle(
+        Coord2 { x: 180, y: 150 },
+        Coord2 { x: 120, y: 160 },
+        Coord2 { x: 130, y: 180 },
+        &mut image,
+        white,
+    );
 
     // output rendering result
     draw_print(image);
+}
+
+fn triangle(
+    t0: Coord2<isize>,
+    t1: Coord2<isize>,
+    t2: Coord2<isize>,
+    image: &mut Vec<Vec<Color>>,
+    color: Color,
+) {
+    line(t0, t1, image, color);
+    line(t1, t2, image, color);
+    line(t2, t0, image, color);
 }
 
 fn line(t0: Coord2<isize>, t1: Coord2<isize>, image: &mut Vec<Vec<Color>>, color: Color) {
