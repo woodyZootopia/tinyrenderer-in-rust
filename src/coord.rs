@@ -7,6 +7,19 @@ pub struct Coord3<T> {
     pub z: T,
 }
 
+impl<T: Copy + Add<Output = T> + Mul<Output = T> + Sub<Output = T> + Div<Output = T>> Coord3<T> {
+    pub fn cross(&self, other: Self) -> Self {
+        Self {
+            x: self.y * other.z - other.y * self.z,
+            y: self.z * other.x - other.z * self.x,
+            z: self.x * other.y - other.x * self.y,
+        }
+    }
+    pub fn dot(self) -> T {
+        self.x * self.x + self.y * self.y + self.z * self.z
+    }
+}
+
 #[derive(Clone, Copy)]
 pub struct Coord2<T> {
     pub x: T,

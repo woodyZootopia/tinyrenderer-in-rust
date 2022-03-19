@@ -16,7 +16,7 @@ fn main() {
 }
 pub fn render() {
     let aspect_ratio = 1f32;
-    let image_width = 1000;
+    let image_width = 300;
     let image_height = (image_width as f32 / aspect_ratio) as usize;
     let mut image = vec![vec![Color::new(0., 0., 0.); image_width]; image_height];
 
@@ -92,13 +92,18 @@ fn inside(p: Coord2<isize>, a: Coord2<isize>, b: Coord2<isize>, c: Coord2<isize>
     let ab = b - a;
     let ac = c - a;
     let pa = a - p;
-    let n = [
-        ac.x as f32 * pa.y as f32 - ac.y as f32 * pa.x as f32,
-        pa.x as f32 * ab.y as f32 - pa.y as f32 * ab.x as f32,
-        ab.x as f32 * ac.y as f32 - ab.y as f32 * ac.x as f32,
-    ];
-    let u = n[0] / n[2];
-    let v = n[1] / n[2];
+    let n = Coord3 {
+        x: ab.x,
+        y: ac.x,
+        z: pa.x,
+    }
+    .cross(Coord3 {
+        x: ab.y,
+        y: ac.y,
+        z: pa.y,
+    });
+    let u = n.x as f32 / n.z as f32;
+    let v = n.y as f32 / n.z as f32;
     let w = 1. - u - v;
     return 0. <= u && 0. <= v && 0. <= w;
 }
