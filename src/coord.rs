@@ -1,6 +1,7 @@
+use std::convert::Into;
 use std::ops::{Add, Div, Mul, Sub};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Coord3<T> {
     pub x: T,
     pub y: T,
@@ -15,12 +16,15 @@ impl<T: Copy + Add<Output = T> + Mul<Output = T> + Sub<Output = T> + Div<Output 
             z: self.x * other.y - other.x * self.y,
         }
     }
-    pub fn dot(self) -> T {
-        self.x * self.x + self.y * self.y + self.z * self.z
+    pub fn dot(&self, other: &Self) -> T {
+        self.x * other.x + self.y * other.y + self.z * other.z
+    }
+    pub fn len_sq(&self) -> T {
+        self.dot(self)
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Coord2<T> {
     pub x: T,
     pub y: T,

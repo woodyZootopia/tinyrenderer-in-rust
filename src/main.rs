@@ -16,32 +16,42 @@ fn main() {
 }
 pub fn render() {
     let aspect_ratio = 1f32;
-    let image_width = 300;
+    let image_width = 1000;
     let image_height = (image_width as f32 / aspect_ratio) as usize;
     let mut image = vec![vec![Color::new(0., 0., 0.); image_width]; image_height];
 
     let model = Model::new("obj/african_head.obj").unwrap();
 
-    let mut rng = rand::thread_rng();
-
     for i in 0..model.nfaces() {
         let face = model.face(i);
-        let v = (0..3).map(|i| model.vert(face[i] as usize));
-        let v: Vec<Coord2<isize>> = v
-            .map(|x| (x + 1f32) * image_width as f32 / 2.)
+        let v3f: Vec<Coord3<f32>> = (0..3).map(|i| model.vert(face[i] as usize)).collect();
+        let v2i: Vec<Coord2<isize>> = v3f
+            .iter()
             .map(|v| Coord2 {
-                x: v.x as isize,
-                y: v.y as isize,
+                x: ((v.x + 1f32) * image_width as f32 / 2.) as isize,
+                y: ((v.y + 1f32) * image_height as f32 / 2.) as isize,
             })
             .collect();
 
-        sweep_triangle(
-            v[0],
-            v[1],
-            v[2],
-            &mut image,
-            Color::new(rng.gen(), rng.gen(), rng.gen()),
-        );
+        let mut normal = (v3f[2] - v3f[0]).cross(v3f[1] - v3f[0]);
+        normal = normal / normal.len_sq().sqrt();
+        let light_dir = Coord3 {
+            x: 0.,
+            y: 0.,
+            z: -1.,
+        };
+        let l_dot_n = normal.dot(&light_dir);
+        let brightness = l_dot_n;
+
+        if brightness > 0. {
+            sweep_triangle(
+                v2i[0],
+                v2i[1],
+                v2i[2],
+                &mut image,
+                Color::new(brightness, brightness, brightness),
+            );
+        }
     }
 
     // output rendering result

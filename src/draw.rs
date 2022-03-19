@@ -13,11 +13,11 @@ pub fn write_color(colors: &Color) {
     let [mut r, mut g, mut b] = colors.e;
 
     // gamma-correct for gamma=2.0
-    r = r.sqrt();
-    g = g.sqrt();
-    b = b.sqrt();
+    // r = r.sqrt();
+    // g = g.sqrt();
+    // b = b.sqrt();
 
-    fn clamp(x: f64, min: f64, max: f64) -> f64 {
+    fn clamp(x: f32, min: f32, max: f32) -> f32 {
         if x < min {
             min
         } else if x > max {
