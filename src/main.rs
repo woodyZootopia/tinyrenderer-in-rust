@@ -8,7 +8,7 @@ use rand::prelude::*;
 
 use color::Color;
 use coord::{Coord2, Coord3};
-use draw::draw_print;
+use draw::print_as_ppm;
 use model::Model;
 
 fn main() {
@@ -44,7 +44,7 @@ pub fn render() {
         let brightness = l_dot_n;
 
         if brightness > 0. {
-            sweep_triangle(
+            fill_triangle(
                 v2i[0],
                 v2i[1],
                 v2i[2],
@@ -55,10 +55,11 @@ pub fn render() {
     }
 
     // output rendering result
-    draw_print(image);
+    print_as_ppm(image);
 }
 
-fn sweep_triangle(
+/// fills the triangle with the given color.
+fn fill_triangle(
     a: Coord2<isize>,
     b: Coord2<isize>,
     c: Coord2<isize>,
@@ -68,13 +69,16 @@ fn sweep_triangle(
     let bbox = find_bounding_box(a, b, c, image[0].len() as isize, image.len() as isize);
     for x in bbox[0].x..bbox[1].x {
         for y in bbox[0].y..bbox[1].y {
-            if inside(Coord2 { x, y }, a, b, c) {
+            if is_inside(Coord2 { x, y }, a, b, c) {
                 image[y as usize][x as usize] = color;
             }
         }
     }
 }
 
+/// Returns the bouding box of the triangle in the format of
+/// `[topleft(x,y), bottomright(x,y)]`.
+/// Also, clips the given coordinate so that the returned value will be within the image region.
 fn find_bounding_box(
     t0: Coord2<isize>,
     t1: Coord2<isize>,
@@ -98,7 +102,8 @@ fn find_bounding_box(
     ];
 }
 
-fn inside(p: Coord2<isize>, a: Coord2<isize>, b: Coord2<isize>, c: Coord2<isize>) -> bool {
+/// Returns if the point `p` is within the triangle connecting `a`, `b`, and `c`.
+fn is_inside(p: Coord2<isize>, a: Coord2<isize>, b: Coord2<isize>, c: Coord2<isize>) -> bool {
     let ab = b - a;
     let ac = c - a;
     let pa = a - p;
@@ -134,6 +139,7 @@ fn horiz_line(
     }
 }
 
+/// Draw a triangle connecting the given points.
 fn triangle(
     t0: Coord2<isize>,
     t1: Coord2<isize>,
@@ -146,6 +152,7 @@ fn triangle(
     line(t2, t0, image, color);
 }
 
+/// Draw a line from `t0` to `t1`.
 fn line(t0: Coord2<isize>, t1: Coord2<isize>, image: &mut Vec<Vec<Color>>, color: Color) {
     use std::mem;
     let mut x0 = t0.x;

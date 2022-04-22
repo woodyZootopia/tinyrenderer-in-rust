@@ -1,6 +1,7 @@
 use super::*;
 
-pub fn draw_print(values: Vec<Vec<Color>>) {
+/// print the given image
+pub fn print_as_ppm(values: Vec<Vec<Color>>) {
     print!("P3\n{} {}\n255\n", values[0].len(), values.len());
     for line in values.into_iter().rev() {
         for value in line {
@@ -10,6 +11,7 @@ pub fn draw_print(values: Vec<Vec<Color>>) {
 }
 
 pub fn write_color(colors: &Color) {
+    #[allow(unused_mut)]
     let [mut r, mut g, mut b] = colors.e;
 
     // gamma-correct for gamma=2.0
