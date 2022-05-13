@@ -34,7 +34,7 @@ pub fn render() {
             .collect();
 
         let mut normal = (v3f[2] - v3f[0]).cross(v3f[1] - v3f[0]);
-        normal = normal / normal.len_sq().sqrt();
+        normal.normalize();
         let light_dir = Coord3 {
             x: 0.,
             y: 0.,
@@ -108,14 +108,14 @@ fn is_inside(p: Coord2<isize>, a: Coord2<isize>, b: Coord2<isize>, c: Coord2<isi
     let ac = c - a;
     let pa = a - p;
     let n = Coord3 {
-        x: ab.x,
-        y: ac.x,
-        z: pa.x,
+        x: ab.x as f32,
+        y: ac.x as f32,
+        z: pa.x as f32,
     }
     .cross(Coord3 {
-        x: ab.y,
-        y: ac.y,
-        z: pa.y,
+        x: ab.y as f32,
+        y: ac.y as f32,
+        z: pa.y as f32,
     });
     let u = n.x as f32 / n.z as f32;
     let v = n.y as f32 / n.z as f32;

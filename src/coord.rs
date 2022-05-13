@@ -1,14 +1,15 @@
+use num_traits::{Float, PrimInt};
 use std::convert::Into;
 use std::ops::{Add, Div, Mul, Sub};
 
 #[derive(Clone, Copy, Debug)]
-pub struct Coord3<T> {
+pub struct Coord3<T: Float> {
     pub x: T,
     pub y: T,
     pub z: T,
 }
 
-impl<T: Copy + Add<Output = T> + Mul<Output = T> + Sub<Output = T> + Div<Output = T>> Coord3<T> {
+impl<T: Float> Coord3<T> {
     pub fn cross(&self, other: Self) -> Self {
         Self {
             x: self.y * other.z - other.y * self.z,
@@ -21,6 +22,9 @@ impl<T: Copy + Add<Output = T> + Mul<Output = T> + Sub<Output = T> + Div<Output 
     }
     pub fn len_sq(&self) -> T {
         self.dot(self)
+    }
+    pub fn normalize(&mut self) {
+        *self = *self / self.len_sq().sqrt()
     }
 }
 
@@ -52,7 +56,7 @@ macro_rules! implBasicArith {
                 }
             }
         }
-        impl<T: Clone+Copy+$name<Output = T>> $name for Coord3<T> {
+        impl<T: Clone+Copy+$name<Output = T>+Float> $name for Coord3<T> {
             type Output = Self;
 
             fn $funcname(self, other: Self) -> Self {
@@ -63,7 +67,7 @@ macro_rules! implBasicArith {
                 }
             }
         }
-        impl<T: Clone+Copy+$name<Output = T>> $name<T> for Coord3<T> {
+        impl<T: Clone+Copy+$name<Output = T>+Float> $name<T> for Coord3<T> {
             type Output = Self;
 
             fn $funcname(self, other: T) -> Self {
