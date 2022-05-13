@@ -4,12 +4,37 @@ mod color;
 mod coord;
 mod draw;
 mod model;
+use num_traits::Float;
 use rand::prelude::*;
 
 use color::Color;
 use coord::{Coord2, Coord3};
 use draw::print_as_ppm;
 use model::Model;
+
+pub struct Image {
+    img: Vec<Color>,
+    pub width: usize,
+    pub height: usize,
+}
+
+impl Image {
+    pub fn new(width: usize, height: usize) -> Self {
+        Self {
+            img: vec![Color::new(0., 0., 0.); width * height],
+            width,
+            height,
+        }
+    }
+    #[inline(always)]
+    pub fn get(&self, x: usize, y: usize) -> &Color {
+        &self.img[x * self.height + y]
+    }
+    #[inline(always)]
+    pub fn set(&mut self, x: usize, y: usize, color: Color) {
+        self.img[x * self.height + y] = color;
+    }
+}
 
 fn main() {
     render();
@@ -18,7 +43,7 @@ pub fn render() {
     let aspect_ratio = 1f32;
     let image_width = 1000;
     let image_height = (image_width as f32 / aspect_ratio) as usize;
-    let mut image = vec![vec![Color::new(0., 0., 0.); image_width]; image_height];
+    let mut image = Image::new(image_width, image_height);
 
     let model = Model::new("obj/african_head.obj").unwrap();
 
@@ -55,7 +80,7 @@ pub fn render() {
     }
 
     // output rendering result
-    print_as_ppm(image);
+    draw_print(&image);
 }
 
 /// fills the triangle with the given color.
@@ -63,14 +88,14 @@ fn fill_triangle(
     a: Coord2<isize>,
     b: Coord2<isize>,
     c: Coord2<isize>,
-    image: &mut Vec<Vec<Color>>,
+    image: &mut Image,
     color: Color,
 ) {
-    let bbox = find_bounding_box(a, b, c, image[0].len() as isize, image.len() as isize);
+    let bbox = find_bounding_box(a, b, c, image.width as isize, image.height as isize);
     for x in bbox[0].x..bbox[1].x {
         for y in bbox[0].y..bbox[1].y {
-            if is_inside(Coord2 { x, y }, a, b, c) {
-                image[y as usize][x as usize] = color;
+            if inside(Coord2 { x, y }, a, b, c) {
+                image.set(x as usize, y as usize, color);
             }
         }
     }
@@ -123,19 +148,13 @@ fn is_inside(p: Coord2<isize>, a: Coord2<isize>, b: Coord2<isize>, c: Coord2<isi
     return 0. <= u && 0. <= v && 0. <= w;
 }
 
-fn horiz_line(
-    mut x_left: isize,
-    mut x_right: isize,
-    y: isize,
-    image: &mut Vec<Vec<Color>>,
-    color: Color,
-) {
+fn horiz_line(mut x_left: isize, mut x_right: isize, y: isize, image: &mut Image, color: Color) {
     if x_left > x_right {
         use std::mem::swap;
         swap(&mut x_left, &mut x_right);
     }
     for x in x_left..x_right {
-        image[y as usize][x as usize] = color;
+        image.set(x as usize, y as usize, color);
     }
 }
 
@@ -144,7 +163,7 @@ fn triangle(
     t0: Coord2<isize>,
     t1: Coord2<isize>,
     t2: Coord2<isize>,
-    image: &mut Vec<Vec<Color>>,
+    image: &mut Image,
     color: Color,
 ) {
     line(t0, t1, image, color);
@@ -153,7 +172,7 @@ fn triangle(
 }
 
 /// Draw a line from `t0` to `t1`.
-fn line(t0: Coord2<isize>, t1: Coord2<isize>, image: &mut Vec<Vec<Color>>, color: Color) {
+fn line(t0: Coord2<isize>, t1: Coord2<isize>, image: &mut Image, color: Color) {
     use std::mem;
     let mut x0 = t0.x;
     let mut y0 = t0.y;
@@ -177,8 +196,8 @@ fn line(t0: Coord2<isize>, t1: Coord2<isize>, image: &mut Vec<Vec<Color>>, color
         if steep {
             mem::swap(&mut x, &mut y); // if transposed, de-transpose
         }
-        if (0..image[0].len()).contains(&(x as usize)) && (0..image.len()).contains(&(y as usize)) {
-            image[y as usize][x as usize] = color;
+        if (0..image.width).contains(&(x as usize)) && (0..image.height).contains(&(y as usize)) {
+            image.set(x as usize, y as usize, color);
         }
     }
 }

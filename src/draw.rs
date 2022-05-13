@@ -1,11 +1,11 @@
 use super::*;
 
 /// print the given image
-pub fn print_as_ppm(values: Vec<Vec<Color>>) {
-    print!("P3\n{} {}\n255\n", values[0].len(), values.len());
-    for line in values.into_iter().rev() {
-        for value in line {
-            write_color(&value);
+pub fn draw_print(image: &Image) {
+    print!("P3\n{} {}\n255\n", image.width, image.height);
+    for y in (0..image.height).rev() {
+        for x in 0..image.width {
+            write_color(image.get(x, y));
         }
     }
 }
