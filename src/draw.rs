@@ -1,11 +1,11 @@
 use super::*;
 
 /// print the given image
-pub fn draw_print(image: &Image) {
+pub fn draw_print(image: &Image<Color>) {
     print!("P3\n{} {}\n255\n", image.width, image.height);
     for y in (0..image.height).rev() {
         for x in 0..image.width {
-            write_color(image.get(x, y));
+            write_color(&image.get(x, y));
         }
     }
 }
