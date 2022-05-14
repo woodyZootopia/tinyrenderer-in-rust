@@ -9,7 +9,7 @@ use rand::prelude::*;
 
 use color::Color;
 use coord::{Coord2, Coord3};
-use draw::print_as_ppm;
+use draw::draw_print;
 use model::Model;
 
 pub struct Image {
@@ -94,7 +94,7 @@ fn fill_triangle(
     let bbox = find_bounding_box(a, b, c, image.width as isize, image.height as isize);
     for x in bbox[0].x..bbox[1].x {
         for y in bbox[0].y..bbox[1].y {
-            if inside(Coord2 { x, y }, a, b, c) {
+            if is_inside(Coord2 { x, y }, a, b, c) {
                 image.set(x as usize, y as usize, color);
             }
         }
