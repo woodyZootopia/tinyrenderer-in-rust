@@ -12,7 +12,7 @@ pub fn draw_print(image: &Image<Color>) {
 
 pub fn write_color(colors: &Color) {
     #[allow(unused_mut)]
-    let [mut r, mut g, mut b] = colors.e;
+    let (mut r, mut g, mut b) = (colors.0, colors.1, colors.2);
 
     // gamma-correct for gamma=2.0
     // r = r.sqrt();

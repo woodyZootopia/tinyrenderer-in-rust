@@ -1,5 +1,7 @@
 #![allow(unused_imports)]
 #![allow(dead_code)]
+use image;
+use image::{DynamicImage, GenericImageView};
 mod color;
 mod coord;
 mod draw;
@@ -11,6 +13,7 @@ use color::Color;
 use coord::{Coord2, Coord3};
 use draw::draw_print;
 use model::Model;
+use std::ops::{Add, Div, Mul, Sub};
 
 pub struct Image<T> {
     img: Vec<T>,
@@ -36,6 +39,35 @@ impl<T: Copy> Image<T> {
     }
 }
 
+impl Into<Image<Color>> for DynamicImage {
+    fn into(self) -> Image<Color> {
+        let mut output = Image::new(
+            self.width() as usize,
+            self.height() as usize,
+            Color::new(0., 0., 0.),
+        );
+        match self {
+            DynamicImage::ImageRgb8(_) => {
+                for x in 0..self.width() {
+                    for y in 0..self.height() {
+                        let pixel = self.get_pixel(x, y);
+                        let val: Color = Color::new(
+                            pixel.0[0] as f32 / 255.,
+                            pixel.0[1] as f32 / 255.,
+                            pixel.0[2] as f32 / 255.,
+                        );
+                        output.set(x as usize, y as usize, val);
+                    }
+                }
+            }
+            _ => {
+                panic!("Not supported image type")
+            }
+        }
+        return output;
+    }
+}
+
 fn main() {
     render();
 }
@@ -48,9 +80,15 @@ pub fn render() {
 
     let model = Model::new("obj/african_head.obj").unwrap();
 
+    let texture: Image<Color> = image::open("obj/african_head_diffuse.png").unwrap().into();
+
     for i in 0..model.nfaces() {
         let face = model.face(i);
-        let v3f: Vec<Coord3<f32>> = (0..3).map(|i| model.vert(face[i] as usize)).collect();
+        let v3f = [
+            model.vert(face.0[0]),
+            model.vert(face.0[1]),
+            model.vert(face.0[2]),
+        ];
         let mut normal = (v3f[2] - v3f[0]).cross(v3f[1] - v3f[0]);
         normal.normalize();
         let light_dir = Coord3 {
@@ -58,18 +96,17 @@ pub fn render() {
             y: 0.,
             z: -1.,
         };
-        let l_dot_n = normal.dot(&light_dir);
-        let brightness = l_dot_n;
+        let brightness = normal.dot(&light_dir);
+
+        let txt_coords = [
+            model.vt(face.1[0]),
+            model.vt(face.1[1]),
+            model.vt(face.1[2]),
+        ]
+        .map(|x| (x.x, x.y));
 
         if brightness > 0. {
-            fill_triangle(
-                v3f[0],
-                v3f[1],
-                v3f[2],
-                &mut image,
-                Color::new(brightness, brightness, brightness),
-                &mut zbuf,
-            );
+            fill_triangle(v3f, &mut image, &texture, txt_coords, brightness, &mut zbuf);
         }
     }
 
@@ -77,16 +114,17 @@ pub fn render() {
     draw_print(&image);
 }
 
-/// fills the triangle with the given color.
-fn fill_triangle<T: Copy>(
-    a: Coord3<f32>,
-    b: Coord3<f32>,
-    c: Coord3<f32>,
+/// fills the triangle with the given texture info.
+fn fill_triangle<T: Copy + Mul<f32, Output = T> + Add<T, Output = T>>(
+    v3f: [Coord3<f32>; 3],
     image: &mut Image<T>,
-    color: T,
+    texture: &Image<T>,
+    txt_coords: [(f32, f32); 3],
+    brightness: f32,
     zbuf: &mut Image<f32>,
 ) {
-    let v3f = [a, b, c];
+    // calculate bounding box
+    let [b, a, c] = v3f;
     let v2i: Vec<Coord2<isize>> = v3f
         .iter()
         .map(|v| Coord2 {
@@ -96,16 +134,40 @@ fn fill_triangle<T: Copy>(
         .collect();
     let (ai, bi, ci) = (v2i[0], v2i[1], v2i[2]);
     let bbox = find_bounding_box(ai, bi, ci, image.width as isize, image.height as isize);
+
     for x in bbox[0].x..bbox[1].x {
         for y in bbox[0].y..bbox[1].y {
             let (u, v, w) = vert_weight(Coord2 { x, y }, ai, bi, ci);
             let z = u * a.z + v * b.z + w * c.z;
             if is_inside(Coord2 { x, y }, ai, bi, ci) && zbuf.get(x as usize, y as usize) < &z {
+                // decide color
+                let txt_x = u * txt_coords[0].0 + v * txt_coords[1].0 + w * txt_coords[2].0;
+                let txt_y = u * txt_coords[0].1 + v * txt_coords[1].1 + w * txt_coords[2].1;
+                let txt_x = txt_x * texture.width as f32;
+                let txt_y = txt_y * texture.height as f32;
+                let color = bilinear_interp(texture, txt_x, txt_y);
+
+                // eprintln!("{:?}", (txt_coords, (txt_x, txt_y)));
+
                 image.set(x as usize, y as usize, color);
                 zbuf.set(x as usize, y as usize, z);
             }
         }
     }
+}
+
+fn bilinear_interp<T: Copy + Mul<f32, Output = T> + Add<T, Output = T>>(
+    texture: &Image<T>,
+    x: f32,
+    y: f32,
+) -> T {
+    assert!(x < texture.width as f32 && y < texture.height as f32);
+    let (xi, yi) = (x as i32, y as i32);
+    let d = (x - xi as f32, y - yi as f32);
+    *texture.get(xi as usize, yi as usize) * (1. - d.0) * (1. - d.1)
+        + *texture.get(xi as usize + 1, yi as usize) * d.0 * (1. - d.1)
+        + *texture.get(xi as usize, yi as usize + 1) * (1. - d.0) * d.1
+        + *texture.get(xi as usize + 1, yi as usize + 1) * d.0 * d.1
 }
 
 /// Returns the bouding box of the triangle in the format of
@@ -140,7 +202,7 @@ fn is_inside(p: Coord2<isize>, a: Coord2<isize>, b: Coord2<isize>, c: Coord2<isi
     return 0. <= u && 0. <= v && 0. <= w;
 }
 
-/// Returns $x,y,z$ where the point `p` is represented as $xa+yb+zc$.
+/// Given an triangle `a,b,c`, return `x,y,z` where the point `p` is represented as `xa+yb+zc`.
 fn vert_weight(
     p: Coord2<isize>,
     a: Coord2<isize>,
