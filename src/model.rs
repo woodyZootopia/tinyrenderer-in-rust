@@ -19,36 +19,37 @@ impl Model {
         let f = BufReader::new(File::open(path)?);
         for line in f.lines() {
             let line = line.unwrap();
-            if line.len() >= 2 {
-                match &line[0..2] {
-                    "v " => {
-                        let data: Vec<&str> = line.split_whitespace().collect();
-                        let x = data[1].parse::<f32>().unwrap();
-                        let y = data[2].parse::<f32>().unwrap();
-                        let z = data[3].parse::<f32>().unwrap();
-                        verts.push(Coord3 { x, y, z });
-                    }
-                    "f " => {
-                        let data: Vec<&str> = line.split_whitespace().collect();
-                        let mut face = [0; 3];
-                        let mut texture = [0; 3];
-                        for i in 0..3 {
-                            let value: Vec<&str> = data[i + 1].split('/').collect();
-                            // in wavefront obj all indices start at 1, not zero
-                            face[i] = value[0].parse::<usize>().unwrap() - 1;
-                            texture[i] = value[1].parse::<usize>().unwrap() - 1;
-                        }
-                        faces.push((face, texture));
-                    }
-                    "vt" => {
-                        let data: Vec<&str> = line.split_ascii_whitespace().collect();
-                        let x = data[1].parse::<f32>().unwrap();
-                        let y = data[2].parse::<f32>().unwrap();
-                        let z = data[3].parse::<f32>().unwrap();
-                        vt.push(Coord3 { x, y, z });
-                    }
-                    _ => {}
+            if line.len() < 2 {
+                continue;
+            }
+            match &line[0..2] {
+                "v " => {
+                    let data: Vec<&str> = line.split_whitespace().collect();
+                    let x = data[1].parse::<f32>().unwrap();
+                    let y = data[2].parse::<f32>().unwrap();
+                    let z = data[3].parse::<f32>().unwrap();
+                    verts.push(Coord3 { x, y, z });
                 }
+                "f " => {
+                    let data: Vec<&str> = line.split_whitespace().collect();
+                    let mut face = [0; 3];
+                    let mut texture = [0; 3];
+                    for i in 0..3 {
+                        let value: Vec<&str> = data[i + 1].split('/').collect();
+                        // in wavefront obj all indices start at 1, not zero
+                        face[i] = value[0].parse::<usize>().unwrap() - 1;
+                        texture[(i + 2) % 3] = value[1].parse::<usize>().unwrap() - 1;
+                    }
+                    faces.push((face, texture));
+                }
+                "vt" => {
+                    let data: Vec<&str> = line.split_ascii_whitespace().collect();
+                    let x = data[1].parse::<f32>().unwrap();
+                    let y = data[2].parse::<f32>().unwrap();
+                    let z = data[3].parse::<f32>().unwrap();
+                    vt.push(Coord3 { x, y, z });
+                }
+                _ => {}
             }
         }
         Ok(Self { verts, faces, vt })

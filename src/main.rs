@@ -89,6 +89,14 @@ pub fn render() {
             model.vert(face.0[1]),
             model.vert(face.0[2]),
         ];
+        let txt_coords = [
+            model.vt(face.1[0]),
+            model.vt(face.1[1]),
+            model.vt(face.1[2]),
+        ]
+        .map(|x| (x.x, x.y));
+
+        // normalを計算
         let mut normal = (v3f[2] - v3f[0]).cross(v3f[1] - v3f[0]);
         normal.normalize();
         let light_dir = Coord3 {
@@ -98,13 +106,7 @@ pub fn render() {
         };
         let brightness = normal.dot(&light_dir);
 
-        let txt_coords = [
-            model.vt(face.1[0]),
-            model.vt(face.1[1]),
-            model.vt(face.1[2]),
-        ]
-        .map(|x| (x.x, x.y));
-
+        // 画面バッファに出力
         if brightness > 0. {
             fill_triangle(v3f, &mut image, &texture, txt_coords, brightness, &mut zbuf);
         }
@@ -147,9 +149,7 @@ fn fill_triangle<T: Copy + Mul<f32, Output = T> + Add<T, Output = T>>(
                 let txt_y = txt_y * texture.height as f32;
                 let color = bilinear_interp(texture, txt_x, txt_y);
 
-                // eprintln!("{:?}", (txt_coords, (txt_x, txt_y)));
-
-                image.set(x as usize, y as usize, color);
+                image.set(x as usize, y as usize, color * brightness);
                 zbuf.set(x as usize, y as usize, z);
             }
         }
