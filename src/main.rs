@@ -126,22 +126,21 @@ fn fill_triangle<T: Copy + Mul<f32, Output = T> + Add<T, Output = T>>(
     zbuf: &mut Image<f32>,
 ) {
     // calculate bounding box
-    let [b, a, c] = v3f;
-    let v2i: Vec<Coord2<isize>> = v3f
+    let v2f: Vec<Coord2<f32>> = v3f
         .iter()
         .map(|v| Coord2 {
-            x: ((v.x + 1f32) * image.width as f32 / 2.) as isize,
-            y: ((v.y + 1f32) * image.height as f32 / 2.) as isize,
+            x: ((v.x + 1f32) * image.width as f32 / 2.),
+            y: ((v.y + 1f32) * image.height as f32 / 2.),
         })
         .collect();
-    let (ai, bi, ci) = (v2i[0], v2i[1], v2i[2]);
-    let bbox = find_bounding_box(ai, bi, ci, image.width as isize, image.height as isize);
+    let [a, b, c] = [v2f[0], v2f[1], v2f[2]];
+    let bbox = find_bounding_box(a, b, c, image.width as isize, image.height as isize);
 
     for x in bbox[0].x..bbox[1].x {
         for y in bbox[0].y..bbox[1].y {
-            let (u, v, w) = vert_weight(Coord2 { x, y }, ai, bi, ci);
-            let z = u * a.z + v * b.z + w * c.z;
-            if is_inside(Coord2 { x, y }, ai, bi, ci) && zbuf.get(x as usize, y as usize) < &z {
+            let (u, v, w) = vert_weight(Coord2 { x, y }, a, b, c);
+            let z = u * v3f[0].z + v * v3f[1].z + w * v3f[2].z;
+            if is_inside(Coord2 { x, y }, a, b, c) && zbuf.get(x as usize, y as usize) < &z {
                 // decide color
                 let txt_x = u * txt_coords[0].0 + v * txt_coords[1].0 + w * txt_coords[2].0;
                 let txt_y = u * txt_coords[0].1 + v * txt_coords[1].1 + w * txt_coords[2].1;
@@ -174,14 +173,14 @@ fn bilinear_interp<T: Copy + Mul<f32, Output = T> + Add<T, Output = T>>(
 /// `[topleft(x,y), bottomright(x,y)]`.
 /// Also, clips the given coordinate so that the returned value will be within the image region.
 fn find_bounding_box(
-    t0: Coord2<isize>,
-    t1: Coord2<isize>,
-    t2: Coord2<isize>,
+    t0: Coord2<f32>,
+    t1: Coord2<f32>,
+    t2: Coord2<f32>,
     width: isize,
     height: isize,
 ) -> [Coord2<isize>; 2] {
-    let mut x = [t0.x, t1.x, t2.x];
-    let mut y = [t0.y, t1.y, t2.y];
+    let mut x = [t0.x as isize, t1.x as isize, t2.x as isize];
+    let mut y = [t0.y as isize, t1.y as isize, t2.y as isize];
     x.sort();
     y.sort();
     return [
@@ -196,22 +195,27 @@ fn find_bounding_box(
     ];
 }
 
-/// Returns if the point `p` is within the triangle connecting `a`, `b`, and `c`.
-fn is_inside(p: Coord2<isize>, a: Coord2<isize>, b: Coord2<isize>, c: Coord2<isize>) -> bool {
+/// Returns if the pixel `p` is within the triangle connecting `a`, `b`, and `c`.
+fn is_inside(p: Coord2<isize>, a: Coord2<f32>, b: Coord2<f32>, c: Coord2<f32>) -> bool {
     let (u, v, w) = vert_weight(p, a, b, c);
     return 0. <= u && 0. <= v && 0. <= w;
 }
 
-/// Given an triangle `a,b,c`, return `x,y,z` where the point `p` is represented as `xa+yb+zc`.
+/// Given an triangle `a,b,c`, return `x,y,z` where the pixel `p` is represented as `xa+yb+zc`.
 fn vert_weight(
     p: Coord2<isize>,
-    a: Coord2<isize>,
-    b: Coord2<isize>,
-    c: Coord2<isize>,
+    a: Coord2<f32>,
+    b: Coord2<f32>,
+    c: Coord2<f32>,
 ) -> (f32, f32, f32) {
+    let pf = Coord2 {
+        x: p.x as f32,
+        y: p.y as f32,
+    };
+
     let ab = b - a;
     let ac = c - a;
-    let pa = a - p;
+    let pa = a - pf;
     let n = Coord3 {
         x: ab.x as f32,
         y: ac.x as f32,
