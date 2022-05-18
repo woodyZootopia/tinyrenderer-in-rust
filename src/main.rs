@@ -3,15 +3,17 @@
 use image;
 use image::{DynamicImage, GenericImageView};
 mod color;
-mod coord;
 mod draw;
+mod linalg;
 mod model;
 use num_traits::Float;
 use rand::prelude::*;
 
 use color::Color;
-use coord::{Coord2, Coord3};
 use draw::draw_print;
+use linalg::coord;
+use linalg::coord::{Coord2, Coord3};
+use linalg::matrix::Matrix3;
 use model::Model;
 use std::ops::{Add, Div, Mul, Sub};
 
@@ -126,8 +128,11 @@ fn fill_triangle<T: Copy + Mul<f32, Output = T> + Add<T, Output = T>>(
     zbuf: &mut Image<f32>,
 ) {
     // calculate bounding box
+    // let P = Matrix3::<f32>([[2., 2., 2.], [2., 2., 2.], [2., 2., 2.]]);
+    let P = Matrix3::<f32>([[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]) * 2.;
     let v2f: Vec<Coord2<f32>> = v3f
         .iter()
+        .map(|v| P.dotv(v))
         .map(|v| Coord2 {
             x: ((v.x + 1f32) * image.width as f32 / 2.),
             y: ((v.y + 1f32) * image.height as f32 / 2.),
@@ -189,8 +194,8 @@ fn find_bounding_box(
             y: 0.max(y[0]),
         },
         Coord2 {
-            x: width.max(x[2]),
-            y: height.max(y[2]),
+            x: width.min(x[2] + 1),
+            y: height.min(y[2] + 1),
         },
     ];
 }
