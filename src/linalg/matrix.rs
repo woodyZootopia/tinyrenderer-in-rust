@@ -1,5 +1,6 @@
+#![allow(dead_code)]
 use super::coord::{Coord3, Coord4};
-use num_traits::{Float, PrimInt};
+use num_traits::Float;
 use std::ops::{Add, Div, Mul, Sub};
 
 #[derive(Clone, Copy, Debug)]
