@@ -1,11 +1,25 @@
-use num_traits::{Float, PrimInt};
+use num_traits::Float;
 use std::ops::{Add, Div, Mul, Sub};
+
+#[derive(Clone, Copy, Debug)]
+pub struct Coord2<T> {
+    pub x: T,
+    pub y: T,
+}
 
 #[derive(Clone, Copy, Debug)]
 pub struct Coord3<T: Float> {
     pub x: T,
     pub y: T,
     pub z: T,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct Coord4<T: Float> {
+    pub x: T,
+    pub y: T,
+    pub z: T,
+    pub w: T,
 }
 
 impl<T: Float> Coord3<T> {
@@ -25,12 +39,24 @@ impl<T: Float> Coord3<T> {
     pub fn normalize(&mut self) {
         *self = *self / self.len_sq().sqrt()
     }
+    pub fn homogenize(&self) -> Coord4<T> {
+        Coord4 {
+            x: self.x,
+            y: self.y,
+            z: self.z,
+            w: T::one(),
+        }
+    }
 }
 
-#[derive(Clone, Copy, Debug)]
-pub struct Coord2<T> {
-    pub x: T,
-    pub y: T,
+impl<T: Float> Coord4<T> {
+    pub fn inhomogenize(&self) -> Coord3<T> {
+        Coord3 {
+            x: self.x / self.w,
+            y: self.y / self.w,
+            z: self.z / self.w,
+        }
+    }
 }
 
 macro_rules! implBasicArith {

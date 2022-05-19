@@ -13,7 +13,7 @@ use color::Color;
 use draw::draw_print;
 use linalg::coord;
 use linalg::coord::{Coord2, Coord3};
-use linalg::matrix::Matrix3;
+use linalg::matrix::{Matrix3, Matrix4};
 use model::Model;
 use std::ops::{Add, Div, Mul, Sub};
 
@@ -127,18 +127,27 @@ fn fill_triangle<T: Copy + Mul<f32, Output = T> + Add<T, Output = T>>(
     brightness: f32,
     zbuf: &mut Image<f32>,
 ) {
-    // calculate bounding box
-    // let P = Matrix3::<f32>([[2., 2., 2.], [2., 2., 2.], [2., 2., 2.]]);
-    let P = Matrix3::<f32>([[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]) * 2.;
+    let c = 2.;
     let v2f: Vec<Coord2<f32>> = v3f
         .iter()
-        .map(|v| P.dotv(v))
+        .map(|v| {
+            Matrix4::<f32>([
+                [1., 0., 0., 0.],
+                [0., 1., 0., 0.],
+                [0., 0., 1., 0.],
+                [0., 0., -1. / c, 1.],
+            ])
+            .dotv(&v.homogenize())
+            .inhomogenize()
+        })
         .map(|v| Coord2 {
             x: ((v.x + 1f32) * image.width as f32 / 2.),
             y: ((v.y + 1f32) * image.height as f32 / 2.),
         })
         .collect();
     let [a, b, c] = [v2f[0], v2f[1], v2f[2]];
+
+    // calculate bounding box
     let bbox = find_bounding_box(a, b, c, image.width as isize, image.height as isize);
 
     for x in bbox[0].x..bbox[1].x {
