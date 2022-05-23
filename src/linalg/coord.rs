@@ -1,20 +1,21 @@
 use num_traits::Float;
+use std::cmp::{Eq, PartialEq};
 use std::ops::{Add, Div, Mul, Sub};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Coord2<T> {
     pub x: T,
     pub y: T,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Coord3<T: Float> {
     pub x: T,
     pub y: T,
     pub z: T,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Coord4<T: Float> {
     pub x: T,
     pub y: T,
@@ -33,11 +34,11 @@ impl<T: Float> Coord3<T> {
     pub fn dot(&self, other: &Self) -> T {
         self.x * other.x + self.y * other.y + self.z * other.z
     }
-    pub fn len_sq(&self) -> T {
-        self.dot(self)
+    pub fn len(&self) -> T {
+        self.dot(self).sqrt()
     }
-    pub fn normalize(&mut self) {
-        *self = *self / self.len_sq().sqrt()
+    pub fn normalized(self) -> Self {
+        self / self.len()
     }
     pub fn homogenize(&self) -> Coord4<T> {
         Coord4 {
@@ -45,6 +46,12 @@ impl<T: Float> Coord3<T> {
             y: self.y,
             z: self.z,
             w: T::one(),
+        }
+    }
+    pub fn drop_z(&self) -> Coord2<T> {
+        Coord2 {
+            x: self.x,
+            y: self.y,
         }
     }
 }

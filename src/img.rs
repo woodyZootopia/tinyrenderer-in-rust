@@ -1,7 +1,7 @@
 use image::{DynamicImage, GenericImageView};
 use std::ops::{Add, Div, Mul, Sub};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Color(pub f32, pub f32, pub f32);
 
 impl Color {
